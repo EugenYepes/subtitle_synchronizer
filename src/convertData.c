@@ -79,9 +79,13 @@ int subtitleToString(Subtitle *subtitles, int amountSubtitles, unsigned char *fi
     if (subtitles != NULL) {
         memset(fileRawData, 0x00, fileSize);
         for (i = 0; i < amountSubtitles; i++) {
+            // number
             lenNum = 0;
             itoua(&(fileRawData[j]), subtitles[i].number, &lenNum);
             fileRawData[j] = 0x0A;
+            // start time
+            // end time
+            // text
         }
     } else {
         printf("NULL poiter at the input data at %s, Abort\n", __func__);
@@ -178,12 +182,32 @@ int uatoi(unsigned char *str, int len)
 
 int itoua(unsigned char *str, int num, int *len)
 {
-    int numBases = 10;
-    if (*len == 0) {
-        while (num / numBases >= 1.0F) {
-            numBases *= numBases;
-            // *len++;
+    int numBases = 10, i;
+    int lenNum = 0, auxNum = num;
+
+    // calculate the length of the number
+    while (auxNum != 0) {
+        auxNum = (int) auxNum / 10;
+        lenNum++;
+    }
+    *len = lenNum;
+    auxNum = num;
+    if (num < 0) {
+        lenNum++;
+        auxNum = -num;
+    }
+    if (lenNum > 0) {
+        str[lenNum] = '\0';
+        for (i = (lenNum - 1); i >= 0; i--) {
+            str[i] = (auxNum % 10) + '0';
+            auxNum = (int) auxNum / 10;
         }
+        if (num < 0) {
+            str[0] = '-';
+        }
+    } else {
+        printf("Error negative length of the number at %s, abort\n", __func__);
+        return 1;
     }
     return 0;
 }

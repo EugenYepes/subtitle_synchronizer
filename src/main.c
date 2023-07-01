@@ -60,7 +60,14 @@ int main(void)
     printf("Negative number if the subtitle is ahead\n");
     scanf("%d", &corrTimeValue);
 
+    // change time
     correctTimeStamp(subtitles, amountSubtitles, corrTimeValue);
+
+    // save the subtitles structs in a string
+    subtitleToString(subtitles, amountSubtitles, fileRawData, fileSize);
+
+
+
     // Test conversion from utf16le to utf8
     // int outBufferSize = 0;
     // unsigned char *outBuffer;

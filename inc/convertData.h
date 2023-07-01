@@ -33,6 +33,17 @@ int itoua(unsigned char *str, int num, int *len);
 int stringToSubtitle(unsigned char *fileRawData, int sizeInput, Subtitle **subtitles, int *amountSubtitles);
 
 /**
+ * @brief 
+ * 
+ * @param subtitles 
+ * @param amountSubtitles 
+ * @param fileRawData 
+ * @param fileSize 
+ * @return int 
+ */
+int subtitleToString(Subtitle *subtitles, int amountSubtitles, unsigned char *fileRawData, int fileSize);
+
+/**
  * Instead of convert from utf-16le i can save the data in the struct, or have the option to save in utf-16le
  * @todo add doxy
  * @todo why add a lot of enters between lines? Add the 0x0D after 0x0D after saving the file. when print the file doesnt appear
