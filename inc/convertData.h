@@ -59,11 +59,20 @@ int subtitleToString(Subtitle *subtitles, int amountSubtitles, unsigned char *fi
 int utf16le_To_Utf8(unsigned char *input_utf16le, int sizeInput, unsigned char **out_utf8, int *sizeOut);
 
 /**
- * @brief convert time string in format hh::mm:ss,sss to ms 
+ * @brief convert time string in format hh:mm:ss,sss to ms 
  * 
  * @param timeStr 
  * @return int 
  */
 int timeStrToTimeMilliSec(unsigned char *timeStr);
+
+/**
+ * @brief 
+ * 
+ * @param timeStr 
+ * @param time 
+ * @return int 
+ */
+int timeMilliSecTotimeStr(unsigned char *timeStr, int time);
 
 #endif //CONVERTDATA_H

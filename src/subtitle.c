@@ -10,7 +10,7 @@ int correctTimeStamp(Subtitle *subtitles, int amountSubtitles, int corrTimeValue
                 subtitles[i].endTimeMS += corrTimeValue;
             }
         } else {
-            printf("No correctio time to apply\n");
+            printf("No correction time to apply\n");
             return 0;
         }
     } else {

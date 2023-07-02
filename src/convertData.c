@@ -14,7 +14,7 @@ int stringToSubtitle(unsigned char *fileRawData, int sizeInput, Subtitle **subti
             for (i = 0; i < sizeInput; i++) {
                 switch (step) {
                     case NUM_SUBTITLE_STEP:
-                        if (fileRawData[i] == 0x0A) {
+                        if (fileRawData[i] == 0x0D && fileRawData[i + 1] == 0x0A) {
                             *subtitles = (Subtitle *) realloc((Subtitle *) *subtitles, sizeof(Subtitle) * ((*amountSubtitles) + 1));
                             if (*subtitles == NULL) {
                                 printf("Error re-allocating memory at %s, Abort\n", __func__);
@@ -22,7 +22,7 @@ int stringToSubtitle(unsigned char *fileRawData, int sizeInput, Subtitle **subti
                             }
                             (*subtitles)[*amountSubtitles].number = uatoi(&(fileRawData[startPos]), i - startPos);
                             step = START_TIME_STEP;
-                            i++;
+                            i += 2;
                             startPos = i;
                         }
                         break;
@@ -35,15 +35,15 @@ int stringToSubtitle(unsigned char *fileRawData, int sizeInput, Subtitle **subti
                         }
                         break;
                     case END_TIME_STEP:
-                        if (fileRawData[i] == 0x0A) {
+                        if (fileRawData[i] == 0x0D && fileRawData[i + 1] == 0x0A) {
                             (*subtitles)[*amountSubtitles].endTimeMS = timeStrToTimeMilliSec(&(fileRawData[startPos]));
                             step = TEXT_STEP;
-                            i++;
+                            i += 2;
                             startPos = i;
                         }
                         break;
                     case TEXT_STEP:
-                        if (fileRawData[i] == 0x0A && fileRawData[i + 1] == 0x0A) {
+                        if (fileRawData[i] == 0x0D && fileRawData[i + 1] == 0x0A && fileRawData[i + 2] == 0x0D && fileRawData[i + 3] == 0x0A) {
                             (*subtitles)[*amountSubtitles].text = (char *) malloc(sizeof(unsigned char) * (i - startPos + 1));
                             if ((*subtitles)[*amountSubtitles].text == NULL) {
                                 printf("Error allocating memory at %s, Abort\n", __func__);
@@ -52,7 +52,7 @@ int stringToSubtitle(unsigned char *fileRawData, int sizeInput, Subtitle **subti
                             memcpy((*subtitles)[*amountSubtitles].text, &(fileRawData[startPos]), i - startPos);
                             (*subtitles)[*amountSubtitles].text[i - startPos] = '\0';
                             step = NUM_SUBTITLE_STEP;
-                            i += 2;
+                            i += 4;
                             startPos = i;
                             (*amountSubtitles)++;
                         }
@@ -82,10 +82,26 @@ int subtitleToString(Subtitle *subtitles, int amountSubtitles, unsigned char *fi
             // number
             lenNum = 0;
             itoua(&(fileRawData[j]), subtitles[i].number, &lenNum);
-            fileRawData[j] = 0x0A;
+            j += lenNum;
+            fileRawData[j++] = 0x0D;
+            fileRawData[j++] = 0x0A;
             // start time
+            timeMilliSecTotimeStr(&(fileRawData[j]), subtitles[i].startTimeMS);
+            j += 12;
+            memcpy(&(fileRawData[j]), TIMES_SEPARATOR, sizeof(TIMES_SEPARATOR));
+            j += sizeof(TIMES_SEPARATOR) - 1;
             // end time
+            timeMilliSecTotimeStr(&(fileRawData[j]), subtitles[i].endTimeMS);
+            j += 12;
+            fileRawData[j++] = 0x0D;
+            fileRawData[j++] = 0x0A;
             // text
+            memcpy(&(fileRawData[j]), subtitles[i].text, strlen(subtitles[i].text));
+            j += strlen(subtitles[i].text);
+            fileRawData[j++] = 0x0D;
+            fileRawData[j++] = 0x0A;
+            fileRawData[j++] = 0x0D;
+            fileRawData[j++] = 0x0A;
         }
     } else {
         printf("NULL poiter at the input data at %s, Abort\n", __func__);
@@ -133,14 +149,6 @@ int utf16le_To_Utf8(unsigned char *input_utf16le, int sizeInput, unsigned char *
     return 0;
 }
 
-int timeMilliSecTotimeStr(unsigned char *timeStr, int time)
-{
-    unsigned char auxTimeStr[12];
-    // itoua(timeStr, (int) time/1000, 3);
-    timeStr = auxTimeStr;
-    return 0;
-}
-
 int timeStrToTimeMilliSec(unsigned char *timeStr)
 {
     int timeMs = 0;
@@ -166,6 +174,40 @@ int timeStrToTimeMilliSec(unsigned char *timeStr)
     return timeMs;
 }
 
+int timeMilliSecTotimeStr(unsigned char *timeStr, int time)
+{
+    int lenNum = 3;
+    if (timeStr != NULL) {
+        if (time >= 0) {
+            // milli seconds
+            itoua(&(timeStr[9]), time % 1000, &lenNum);
+            time = (int) time / 1000;
+            timeStr[8] = ',';
+            // seconds
+            lenNum = 2;
+            itoua(&(timeStr[6]), time % 60, &lenNum);
+            time = (int) time / 60;
+            timeStr[5] = ':';
+            // minutes
+            lenNum = 2;
+            itoua(&(timeStr[3]), time % 60, &lenNum);
+            time = (int) time / 60;
+            timeStr[2] = ':';
+            // minutes
+            lenNum = 2;
+            itoua(timeStr, time, &lenNum);
+        } else {
+            printf("Negative value of num at %s, Abort\n", __func__);
+            return -2;
+        }
+    } else {
+        printf("NULL poiter at the input data at %s, Abort\n", __func__);
+        return -1;
+    }
+    return 0;
+}
+
+
 int uatoi(unsigned char *str, int len)
 {
     int i, num = 0;
@@ -190,14 +232,18 @@ int itoua(unsigned char *str, int num, int *len)
         auxNum = (int) auxNum / 10;
         lenNum++;
     }
-    *len = lenNum;
+    if (*len == 0) {
+        *len = lenNum;
+    } else if (lenNum != *len) {
+        lenNum = *len;
+    }
     auxNum = num;
     if (num < 0) {
         lenNum++;
         auxNum = -num;
     }
     if (lenNum > 0) {
-        str[lenNum] = '\0';
+        // str[lenNum] = '\0';
         for (i = (lenNum - 1); i >= 0; i--) {
             str[i] = (auxNum % 10) + '0';
             auxNum = (int) auxNum / 10;

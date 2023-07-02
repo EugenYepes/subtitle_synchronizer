@@ -38,7 +38,7 @@ int main(void)
     // open file
     printf("Enter file name or complete path: \n");
     scanf("%s", fileName);
-    fp = fopen(fileName, "r+");
+    fp = fopen(fileName, "rb");
 
     // read file
     fseek(fp, 0L, SEEK_END);
@@ -51,9 +51,13 @@ int main(void)
         return 1;
     }
     fread(fileRawData, sizeof(unsigned char), fileSize, fp);
-    stringToSubtitle(fileRawData, fileSize, &subtitles, &amountSubtitles);
-    printf("%lld\n",strlen(subtitles[0].text));
-    // hexDump(fileRawData, fileSize);
+
+    // parse data
+    if (stringToSubtitle(fileRawData, fileSize, &subtitles, &amountSubtitles) != 0) {
+        printf("Error parsing data\n");
+        return 1;
+    }
+    hexDump(fileRawData, fileSize);
 
     printf("Enter the time correction in milliseconds.\n");
     printf("Positive number if the subtitle is behind\n");
@@ -65,8 +69,10 @@ int main(void)
 
     // save the subtitles structs in a string
     subtitleToString(subtitles, amountSubtitles, fileRawData, fileSize);
-
-
+    hexDump(fileRawData, fileSize);
+    FILE *fp2 = fopen("outFile.srt", "wb");
+    fwrite(fileRawData, sizeof(unsigned char), fileSize, fp2);
+    fclose(fp2);
 
     // Test conversion from utf16le to utf8
     // int outBufferSize = 0;
@@ -74,10 +80,6 @@ int main(void)
     // utf16le_To_Utf8(fileRawData, fileSize, &outBuffer, &outBufferSize);
     // printf("outBuffer: \n");
     // hexDump(outBuffer, outBufferSize);
-    // FILE *fp2 = fopen("out_utf8_test.srt", "w");
-    // fwrite(outBuffer, sizeof(unsigned char), outBufferSize, fp2);
-    // fclose(fp2);
-    // free(outBuffer);
 
     fclose(fp);
     free(fileRawData);

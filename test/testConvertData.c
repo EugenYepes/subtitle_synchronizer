@@ -3,11 +3,13 @@
 #include <stdio.h>
 
 void test_uitoa(void);
+void test_timeMilliSecTotimeStr(void);
 
 int main(void)
 {
     printf("start test cases\n");
-    test_uitoa();
+    // test_uitoa();
+    test_timeMilliSecTotimeStr();
 }
 
 void test_uitoa(void)
@@ -62,5 +64,19 @@ void test_uitoa(void)
         printf("success!\n");
     } else {
         printf("TestCase faild\n");
+    }
+}
+
+void test_timeMilliSecTotimeStr(void)
+{
+    unsigned char out[12];
+    if (timeMilliSecTotimeStr(out, 2000) == 0) {
+        if (memcmp(out, "00:00:02,000", 12) == 0) {
+            printf("success!\n");
+        } else {
+            printf("TestCase faild, wrong number %s\n", out);
+        }
+    } else {
+        printf("TestCase faild, error return\n");
     }
 }

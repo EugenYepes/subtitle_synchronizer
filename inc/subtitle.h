@@ -20,6 +20,8 @@ enum ParseSteps{
     TEXT_STEP
 };
 
+#define TIMES_SEPARATOR " --> "
+
 /**
  * @brief Construct a new correct Time Stamp object
  * 
